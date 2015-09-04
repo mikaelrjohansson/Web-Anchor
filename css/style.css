@@ -1,0 +1,40 @@
+@font-face {
+  font-family: 'OpenSansRegular';
+  src: url("../fonts/OpenSans-Regular-webfont.eot");
+  src: url("../fonts/OpenSans-Regular-webfont.eot?#iefix") format("embedded-opentype"), url("../fonts/OpenSans-Regular-webfont.woff") format("woff"), url("../fonts/OpenSans-Regular-webfont.ttf") format("truetype"), url("../fonts/OpenSans-Regular-webfont.svg#OpenSansRegular") format("svg");
+  font-weight: normal;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+}
+
+html, body { min-height: 100%; }
+
+body.body {
+	font: 14px/1.5 "OpenSansRegular", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	color: #F6F1DC;
+	background: #252525;
+  background-attachment: fixed;
+  background: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #2a2a29), color-stop(100%, #1c1c1c));
+  background: -webkit-linear-gradient(#2a2a29, #1c1c1c);
+  background: -moz-linear-gradient(#2a2a29, #1c1c1c);
+  background: -o-linear-gradient(#2a2a29, #1c1c1c);
+  background: -ms-linear-gradient(#2a2a29, #1c1c1c);
+  background: linear-gradient(#2a2a29, #1c1c1c);
+}
+
+.container { max-width: 650px !important; }
+
+.navbar { display: none; }
+
+a { color: #4183c4 !important; }
+
+.spinner {
+	display: block;
+	margin: auto;
+	width: 66px;
+	height: 66px;
+	position: absolute;
+	top:	50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}

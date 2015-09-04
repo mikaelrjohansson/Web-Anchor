@@ -1,74 +1,15 @@
 <!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Web Anchor</title>
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/github-dark.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script src="javascripts/respond.js"></script>
-    <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <!--[if lt IE 8]>
-    <link rel="stylesheet" href="stylesheets/ie.css">
-    <![endif]-->
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-
-  </head>
-  <body>
-    <div class="wrapper">
-
-      <section>
-
-        <h1><a id="web-anchor" class="anchor" href="#web-anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Web Anchor</h1>
-
-<p><a href="https://ci.appveyor.com/project/mattiasnordqvist/web-anchor"><img src="https://ci.appveyor.com/api/projects/status/98vo2qacd6o53wer?svg=true" alt="Build status"></a>
-<a href="http://badge.fury.io/nu/webanchor"><img src="https://badge.fury.io/nu/webanchor.svg" alt="NuGet version"></a><br>
-Web Anchor provides easy, clean and type-safe access to web resources.</p>
-
-<h2>
-<a id="install" class="anchor" href="#install" aria-hidden="true"><span class="octicon octicon-link"></span></a>Install</h2>
-
-<p>To install Web Anchor, run the following command in the <a href="http://docs.nuget.org/docs/start-here/using-the-package-manager-console">Package Manager Console</a></p>
-
-<p><code>PM&gt; Install-Package WebAnchor</code></p>
-
-<h2>
-<a id="use" class="anchor" href="#use" aria-hidden="true"><span class="octicon octicon-link"></span></a>Use</h2>
-
-<div class="highlight highlight-csharp"><pre>[BaseLocation(<span class="pl-s"><span class="pl-pds">"</span>api/customer<span class="pl-pds">"</span></span>)]
-<span class="pl-k">public</span> <span class="pl-k">interface</span> <span class="pl-en">ICustomerApi</span>
-{
-    [Get(<span class="pl-s"><span class="pl-pds">"</span>/{id}<span class="pl-pds">"</span></span>)]
-    Task&lt;Customer&gt; <span class="pl-en">GetCustomer</span>(<span class="pl-k">int</span> <span class="pl-smi">id</span>);
-}
-
-....
-
-<span class="pl-k">var</span> customerApi = Api.For&lt;ICustomerApi&gt;(<span class="pl-s"><span class="pl-pds">"</span>http://localhost:1111/<span class="pl-pds">"</span></span>);
-<span class="pl-k">await</span> customerApi.GetCustomer(<span class="pl-c1">9</span>);
-
-<span class="pl-c">// =&gt; HTTP GET http://localhost:1111/api/customer/9</span></pre></div>
-
-<p>Does this get you started? Head over to the <a href="https://github.com/mattiasnordqvist/Web-Anchor/wiki">wiki</a> for more coolness.</p>
-
-<h2>
-<a id="collaborate" class="anchor" href="#collaborate" aria-hidden="true"><span class="octicon octicon-link"></span></a>Collaborate</h2>
-
-<p>Web Anchor is open-sourced to the max and free to use and modify, even for commercial projects. We would love to hear from you if you're using Web Anchor.</p>
-
-<p>Also, if you like (or hate) Web Anchor so much that you would like to contribute in any way, please visit us on <a href="https://github.com/mattiasnordqvist/Web-Anchor">GitHub</a>. :) </p>
-
-<h2>
-<a id="alternatives" class="anchor" href="#alternatives" aria-hidden="true"><span class="octicon octicon-link"></span></a>Alternatives</h2>
-
-<p>Although Web Anchor is off course the best framework for accessing web apis, there are alternatives in the .Net ecosystem you might be interested in. Web Anchor is more or less inspired by <a href="https://github.com/paulcbetts/refit/">ReFit</a>. ReFit uses a completely different approach on how the implementation of your api interfaces is created. While Web Anchor generates an implementation in <code>runtime</code> using Castle Windsor DynamicProxy, ReFit generates code at <code>compile time</code>. ReFit says it supports platforms like Xamarin. Web Anchor has only been tested on windows desktops and servers. If you´ve used Web Anchor successfully on any other platform, let us know! :) There is also <a href="http://restsharp.org/">RestSharp</a> which I have never tried. It seems to work in a very different way from both ReFit and Web Anchor</p>
-      </section>
-
-    </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
-
-  </body>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>Web Anchor</title>
+		<link rel="stylesheet" href="css/style.css">
+		<meta name="viewport" content="width=device-width,initial-scale=1">
+	</head>
+	<body class="body">
+		<xmp class="wrapper" style="display:none;"></xmp>
+		<img src="img/spinner.gif" alt="" class="spinner">
+		<script src="js/jquery-1.11.1.min.js"></script>
+		<script src="js/script.js"></script>
+	</body>
 </html>
