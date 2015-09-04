@@ -26,7 +26,7 @@
 
 .pl-e  /* entity */,
 .pl-en /* entity.name */ {
-  color: #9774cb;
+  color: #e0be5a;
 }
 
 .pl-s .pl-s1 /* string source */,
@@ -39,7 +39,7 @@
 }
 
 .pl-k /* keyword, storage, storage.type */ {
-  color: #cc2372;
+  color: #b76927;
 }
 
 .pl-pds              /* punctuation.definition.string, string.regexp.character-class */,
@@ -113,4 +113,3 @@
 .pl-mo /* meta.output */ {
   color: #264ec5;
 }
-
