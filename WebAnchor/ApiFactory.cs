@@ -1,25 +1,24 @@
 using Castle.DynamicProxy;
+using WebAnchor.RequestFactory;
+using WebAnchor.ResponseParser;
 
 namespace WebAnchor
 {
+    /// <summary>
+    /// Not intended to be used by WebAnchor consumers. Use Api instead.
+    /// </summary>
     public class ApiFactory
     {
-        public ApiFactory(ProxyGenerator proxyGenerator)
-        {
-            Settings = new ApiSettings();
-            ProxyGenerator = proxyGenerator;
-        }
+        private static ProxyGenerator _proxyGenerator;
+        protected static ProxyGenerator ProxyGenerator => _proxyGenerator ?? (_proxyGenerator = new ProxyGenerator());
 
-        public ISettings Settings { get; set; }
-        protected ProxyGenerator ProxyGenerator { get; set; }
-
-        public T Create<T>(IHttpClient httpClient, bool shouldDisposeHttpClient, ISettings settings = null) where T : class
+        public T Create<T>(IHttpClient httpClient, bool shouldDisposeHttpClient, IApiSettings settings) where T : class
         {
-            var requestFactory = settings == null ? Settings.GetRequestFactory() : settings.GetRequestFactory();
+            var requestFactory = new HttpRequestFactory(settings);
             requestFactory.ValidateApi(typeof(T));
-            var responseParser = settings == null ? Settings.GetResponseParser() : settings.GetResponseParser();
-            responseParser.ValidateApi(typeof(T));
-            var anchor = new Anchor(httpClient, requestFactory, responseParser, shouldDisposeHttpClient);
+            var responseHandlersList = new HttpResponseHandlersList(settings);
+            responseHandlersList.ValidateApi(typeof(T));
+            var anchor = new Anchor(httpClient, requestFactory, responseHandlersList, shouldDisposeHttpClient);
             var api = ProxyGenerator.CreateInterfaceProxyWithoutTarget<T>(anchor);
             return api;
         }

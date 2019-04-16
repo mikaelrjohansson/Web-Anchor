@@ -5,23 +5,22 @@ using System.Threading.Tasks;
 
 using Newtonsoft.Json;
 
-using NUnit.Framework;
 using WebAnchor.ResponseParser.ResponseHandlers;
 using WebAnchor.Tests.ACollectionOfRandomTests.Fixtures;
 using WebAnchor.Tests.ProofOfConcepts.ParsingTheLocationHeader.Fixtures;
-using WebAnchor.Tests.TestUtils;
+using WebAnchor.TestUtils;
+using Xunit;
 
 namespace WebAnchor.Tests.ProofOfConcepts.ParsingTheLocationHeader
 {
-    [TestFixture]
     public class Tests : WebAnchorTest
     {
-        [Test]
+        [Fact]
         public async Task ParsingTheLocationHeaderFromResponseBodyViaCustomResponseParser()
         {
-            var settings = new ApiSettings();
-            var index = settings.ResponseHandlers.FindIndex(x => x is AsyncDeserializingResponseHandler);
-            settings.ResponseHandlers[index] = new AsyncDeserializingResponseHandler(new HeaderEnabledContentDeserializer(new JsonSerializer()));
+            var settings = new DefaultApiSettings();
+            var index = settings.Response.ResponseHandlers.FindIndex(x => x is AsyncDeserializingResponseHandler);
+            settings.Response.ResponseHandlers[index] = new AsyncDeserializingResponseHandler(new HeaderEnabledContentDeserializer(new JsonSerializer()));
 
             var fakedResponse = new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -34,9 +33,9 @@ namespace WebAnchor.Tests.ProofOfConcepts.ParsingTheLocationHeader
                 fakedResponse,
                 settings);
 
-            Assert.AreEqual("Mighty Gazelle", result.Name);
-            Assert.AreEqual("api/customer/1", result.Location);
-            Assert.AreEqual(1, result.Id);
+            Assert.Equal("Mighty Gazelle", result.Name);
+            Assert.Equal("api/customer/1", result.Location);
+            Assert.Equal(1, result.Id);
         }
     }
 }

@@ -1,38 +1,35 @@
-using Castle.DynamicProxy;
 using FakeItEasy;
 
-using NUnit.Framework;
-
-using WebAnchor.Tests.TestUtils;
+using WebAnchor.TestUtils;
+using Xunit;
 
 namespace WebAnchor.Tests.Disposable
 {
-    [TestFixture]
     public class DisposableTests : WebAnchorTest
     {
-        [Test]
+        [Fact]
         public void ShouldDisposeHttpClient_WhenHttpClientIsCreatedInternally()
         {
             var fakeHttpClient = A.Fake<IHttpClient>();
-            var api = new ApiFactory(new ProxyGenerator()).Create<IApi>(fakeHttpClient, true);
+            var api = new ApiFactory().Create<IApi>(fakeHttpClient, true, new DefaultApiSettings());
             api.Dispose();
             A.CallTo(() => fakeHttpClient.Dispose()).MustHaveHappened();
         }
 
-        [Test]
+        [Fact]
         public void ShouldNotDisposeHttpClient_WhenHttpClientIsProvidedByConsumer()
         {
             var fakeHttpClient = A.Fake<IHttpClient>();
-            var api = new ApiFactory(new ProxyGenerator()).Create<IApi>(fakeHttpClient, false);
+            var api = new ApiFactory().Create<IApi>(fakeHttpClient, false, new DefaultApiSettings());
             api.Dispose();
             A.CallTo(() => fakeHttpClient.Dispose()).MustNotHaveHappened();
         }
 
-        [Test]
+        [Fact]
         public void ShouldNeverDisposeHttpClient_WhenDisposeIsNotInvokedOnIApi()
         {
             var fakeHttpClient = A.Fake<IHttpClient>();
-            new ApiFactory(new ProxyGenerator()).Create<IApi>(fakeHttpClient, true);
+            new ApiFactory().Create<IApi>(fakeHttpClient, true, new DefaultApiSettings());
             A.CallTo(() => fakeHttpClient.Dispose()).MustNotHaveHappened();
         }
     }

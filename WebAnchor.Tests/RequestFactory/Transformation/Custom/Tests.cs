@@ -1,47 +1,45 @@
 ﻿using System.Collections.Generic;
 using System.Net.Http;
 
-using NUnit.Framework;
-
-using WebAnchor.Tests.TestUtils;
+using WebAnchor.TestUtils;
+using Xunit;
 
 namespace WebAnchor.Tests.RequestFactory.Transformation.Custom
 {
-    [TestFixture]
     public class Tests : WebAnchorTest
     {
-        [Test]
+        [Fact]
         public void UrlWithQueryParams_AddExtraParameter()
         {
             TestTheRequest<ICustomerApi>(api => api.GetCustomers("test"), m =>
             {
-                Assert.AreEqual(HttpMethod.Get, m.Method);
-                Assert.AreEqual("api/customer?filter=test&extra=3", m.RequestUri.ToString());
+                Assert.Equal(HttpMethod.Get, m.Method);
+                Assert.Equal("api/customer?filter=test&extra=3", m.RequestUri.ToString());
             },
-            x => x.ParameterListTransformers.Add(new AddExtraParameterTransformer("extra", 3)));
+            x => x.Request.ParameterListTransformers.Add(new AddExtraQueryParameterTransformer("extra", new object[] { 3 })));
         }
 
-        [Test]
+        [Fact]
         public void UrlWithQueryParams_AddExtraParameter_ThroughSettings()
         {
             TestTheRequest<ICustomerApi>(api => api.GetCustomers("test"), m =>
             {
-                Assert.AreEqual(HttpMethod.Get, m.Method);
-                Assert.AreEqual("api/customer?filter=test&extra=3", m.RequestUri.ToString());
+                Assert.Equal(HttpMethod.Get, m.Method);
+                Assert.Equal("api/customer?filter=test&extra=3", m.RequestUri.ToString());
             },
             settings: new AddExtraParameterSettings());
         }
 
-        [Test]
+        [Fact]
         public void UrlWithQueryParams_AddAnExtraTransformer()
         {
             TestTheRequest<ICustomerApi>(api => api.MethodWithListParameter(new List<string> { "abc", "bcd", "cde" }),
                 m =>
                 {
-                    Assert.AreEqual(HttpMethod.Get, m.Method);
-                    Assert.AreEqual("api/customer?names=cde&names=bcd&names=abc", m.RequestUri.ToString());
+                    Assert.Equal(HttpMethod.Get, m.Method);
+                    Assert.Equal("api/customer?names=abc&names=bcd&names=cde", m.RequestUri.ToString());
                 },
-                x => x.ParameterListTransformers.Add(new ReverseParameterListTransformers()));
+                x => x.Request.ParameterListTransformers.Add(new ReverseParameterListTransformers()));
         }
     }
 }

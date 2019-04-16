@@ -1,13 +1,10 @@
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-
-using NUnit.Framework;
-
-using WebAnchor.RequestFactory;
-using WebAnchor.RequestFactory.HttpAttributes;
+using WebAnchor.Attributes.URL;
 using WebAnchor.RequestFactory.Transformation.Transformers.Headers;
-using WebAnchor.Tests.TestUtils;
+using WebAnchor.TestUtils;
+using Xunit;
 
 namespace WebAnchor.Tests.RequestFactory.Headers
 {
@@ -20,7 +17,23 @@ namespace WebAnchor.Tests.RequestFactory.Headers
             Task<HttpResponseMessage> Get();
         }
 
-        [Test]
+        [BaseLocation("location")]
+        [AddHeader("Authorization", "Basic 79iou342qkras9")]
+        public interface IApi2
+        {
+            [Get("resource")]
+            Task<HttpResponseMessage> Get();
+        }
+
+        [BaseLocation("location")]
+        public interface IApi3
+        {
+            [Get("resource")]
+            [AddHeader("Authorization", "Basic 79iou342qkras9")]
+            Task<HttpResponseMessage> Get();
+        }
+
+        [Fact]
         public void TestAddHeaderTransformer()
         {
             TestTheRequest<IApi>(
@@ -28,12 +41,36 @@ namespace WebAnchor.Tests.RequestFactory.Headers
                 settings: new ApiSettings1(), 
                 assertHttpRequestMessage: request =>
                     {
-                        Assert.That(request.Headers.Contains("Authorization"));
-                        Assert.AreEqual("Basic 79iou342qkras9", request.Headers.GetValues("Authorization").Single());
+                        Assert.True(request.Headers.Contains("Authorization"));
+                        Assert.Equal("Basic 79iou342qkras9", request.Headers.GetValues("Authorization").Single());
                     });
         }
 
-        [Test]
+        [Fact]
+        public void TestAddHeaderAttributeOnApiTransformer()
+        {
+            TestTheRequest<IApi2>(
+                api => api.Get(),
+                assertHttpRequestMessage: request =>
+                {
+                    Assert.True(request.Headers.Contains("Authorization"));
+                    Assert.Equal("Basic 79iou342qkras9", request.Headers.GetValues("Authorization").Single());
+                });
+        }
+
+        [Fact]
+        public void TestAddHeaderAttributeOnMethodTransformer()
+        {
+            TestTheRequest<IApi3>(
+                api => api.Get(),
+                assertHttpRequestMessage: request =>
+                {
+                    Assert.True(request.Headers.Contains("Authorization"));
+                    Assert.Equal("Basic 79iou342qkras9", request.Headers.GetValues("Authorization").Single());
+                });
+        }
+
+        [Fact]
         public void TestAddAuthorizationTransformer()
         {
             TestTheRequest<IApi>(
@@ -41,24 +78,24 @@ namespace WebAnchor.Tests.RequestFactory.Headers
                 settings: new ApiSettings2(),
                 assertHttpRequestMessage: request =>
                     {
-                        Assert.That(request.Headers.Contains("Authorization"));
-                        Assert.AreEqual("Basic 79iou342qkras9", request.Headers.GetValues("Authorization").Single());
+                        Assert.True(request.Headers.Contains("Authorization"));
+                        Assert.Equal("Basic 79iou342qkras9", request.Headers.GetValues("Authorization").Single());
                     });
         }
 
-        public class ApiSettings1 : ApiSettings
+        public class ApiSettings1 : DefaultApiSettings
         {
             public ApiSettings1()
             {
-                ParameterListTransformers.Add(new AddHeaderTransformer("Authorization", "Basic 79iou342qkras9"));
+                Request.ParameterListTransformers.Add(new AddHeaderAttribute("Authorization", "Basic 79iou342qkras9"));
             }
         }
 
-        public class ApiSettings2 : ApiSettings
+        public class ApiSettings2 : DefaultApiSettings
         {
             public ApiSettings2()
             {
-                ParameterListTransformers.Add(new AddAuthorizationTransformer("Basic 79iou342qkras9"));
+                Request.ParameterListTransformers.Add(new AddAuthorizationAttribute("Basic 79iou342qkras9"));
             }
         }
     }

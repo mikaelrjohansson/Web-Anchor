@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
-
-using WebAnchor.RequestFactory;
-using WebAnchor.RequestFactory.HttpAttributes;
-using WebAnchor.RequestFactory.Transformation.Transformers.Alias;
+using WebAnchor.Attributes.Parameters;
+using WebAnchor.Attributes.URL;
 using WebAnchor.Tests.RequestFactory.Transformation.Transformers.Attribute.Fixtures;
 
 namespace WebAnchor.Tests.ACollectionOfRandomTests.Fixtures
@@ -72,5 +70,8 @@ namespace WebAnchor.Tests.ACollectionOfRandomTests.Fixtures
         
         [Get("/returnnonjson")]
         Task<Customer> GetAnObject();
+
+        [Get("/returnnonjson")]
+        Task GetJustTask();
     }
 }

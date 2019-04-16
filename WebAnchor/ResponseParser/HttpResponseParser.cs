@@ -1,36 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
 
 using Castle.DynamicProxy;
 
 namespace WebAnchor.ResponseParser
 {
-    public class HttpResponseParser : IHttpResponseParser
+    public class HttpResponseHandlersList
     {
-        private readonly IList<IResponseHandler> _responseHandlers;
+        private readonly List<IResponseHandler> _responseHandlers;
 
-        public HttpResponseParser(IList<IResponseHandler> responseHandlers)
+        public HttpResponseHandlersList(IApiSettings settings)
         {
-            _responseHandlers = responseHandlers;
+            _responseHandlers = settings.Response.ResponseHandlers;
         }
 
         public virtual void ValidateApi(Type type)
         {
         }
 
-        public virtual void Parse(Task<HttpResponseMessage> httpResponseMessage, IInvocation invocation)
+        public IResponseHandler FindHandler(IInvocation invocation)
         {
-            var handler = _responseHandlers.First(x => x.CanHandle(httpResponseMessage, invocation));
+            var handler = _responseHandlers.First(x => x.CanHandle(invocation));
             if (handler == null)
             {
                 throw new WebAnchorException($"Return type of method {invocation.Method.Name} in {invocation.Method.DeclaringType.FullName} cannot be handled by any of the registered response handlers.");
             }
             else
             {
-                handler.Handle(httpResponseMessage, invocation);
+                return handler;
             }
         }
     }

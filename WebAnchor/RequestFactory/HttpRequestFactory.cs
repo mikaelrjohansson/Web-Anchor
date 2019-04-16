@@ -1,34 +1,30 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
-
 using Castle.DynamicProxy;
+using WebAnchor.Attributes.URL;
 using WebAnchor.RequestFactory.Transformation;
 
 namespace WebAnchor.RequestFactory
 {
-    public class HttpRequestFactory : IHttpRequestFactory
+    public class HttpRequestFactory
     {
-        public HttpRequestFactory(IContentSerializer contentSerializer, IList<IParameterListTransformer> transformers)
+        private readonly IApiSettings _settings;
+
+        public HttpRequestFactory(IApiSettings settings)
         {
-            ContentSerializer = contentSerializer;
-            ParameterListTransformers = transformers ?? new List<IParameterListTransformer>();
-            InsertMissingSlashBetweenBaseLocationAndVerbAttributeUrl = true;
-            PreservePathInUrlSegmentParameters = true;
+            _settings = settings;
         }
 
-        public IContentSerializer ContentSerializer { get; set; }
-        public IList<IParameterListTransformer> ParameterListTransformers { get; set; }
         public Parameters ResolvedParameters { get; set; }
-        public bool InsertMissingSlashBetweenBaseLocationAndVerbAttributeUrl { get; set; }
-        public bool PreservePathInUrlSegmentParameters { get; set; }
 
         public virtual void ValidateApi(Type type)
         {
-            foreach (var parameterListTransformer in ParameterListTransformers)
+            foreach (var parameterListTransformer in _settings.Request.ParameterListTransformers)
             {
                 parameterListTransformer.ValidateApi(type);
             }
@@ -49,47 +45,36 @@ namespace WebAnchor.RequestFactory
 
         public virtual HttpRequestMessage Create(IInvocation invocation)
         {
-            ResolvedParameters = ResolveParameters(invocation);
-             
-            var resolvedUrl = ResolveUrlRoute(invocation);
-            var resolvedMethod = ResolveHttpMethod(invocation);
+            var requestTransformContext = new RequestTransformContext(new ApiInvocation(invocation), _settings);
+            requestTransformContext.UrlTemplate = ResolveUrlTemplate(invocation, requestTransformContext);
+
+            ResolvedParameters = ResolveParameters(requestTransformContext);
+
+            var resolvedUrl = ResolveUrl(requestTransformContext.UrlTemplate, requestTransformContext);
+            var resolvedHttpAttribute = ResolveHttpMethodAttribute(invocation);
+            var resolvedMethod = resolvedHttpAttribute.Method;
 
             var request = new HttpRequestMessage(resolvedMethod, resolvedUrl);
 
-            if (resolvedMethod == HttpMethod.Post || resolvedMethod == HttpMethod.Put)
+            if (resolvedHttpAttribute.IncludeContentInRequest)
             {
-                request.Content = ResolveContent(invocation);
+                request.Content = ResolveContent(requestTransformContext);
             }
 
             foreach (var headerParameter in ResolvedParameters.HeaderParameters)
             {
-                var headerValue = headerParameter.Value as string;
-                if (headerValue != null)
-                {
-                    request.Headers.Add(headerParameter.Name, headerValue);
-                }
-                else
-                {
-                    var headerValues = headerParameter.Value as IEnumerable<string>;
-                    if (headerValues != null)
-                    {
-                        request.Headers.Add(headerParameter.Name, headerValues);
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException("A header value can be of type string or IEnumerable<string>, not " + headerParameter.Value.GetType());
-                    }
-                }
+                var headerValues = headerParameter.Values.Select(x => requestTransformContext.ParameterValueFormatter.Format(x, headerParameter)).ToList();
+                request.Headers.Add(headerParameter.Name, headerValues);
             }
 
             return request;
         }
 
-        protected virtual Parameters ResolveParameters(IInvocation invocation)
+        protected virtual Parameters ResolveParameters(RequestTransformContext requestTransformContext)
         {
             var parameters = new List<Parameter>();
-            var transformedParameters = ParameterListTransformers.Aggregate(parameters,
-                (current, transformer) => transformer.TransformParameters(current, new ParameterTransformContext(new ApiInvocation(invocation)))
+            var transformedParameters = requestTransformContext.ParameterListTransformers.Aggregate(parameters,
+                (current, transformer) => transformer.Apply(current, requestTransformContext)
                                                      .ToList());
 
             return new Parameters(
@@ -99,38 +84,46 @@ namespace WebAnchor.RequestFactory
                 transformedParameters.FirstOrDefault(x => x.ParameterType == ParameterType.Content));
         }
 
-        protected virtual HttpContent ResolveContent(IInvocation invocation)
+        protected virtual HttpContent ResolveContent(RequestTransformContext requestTransformContext)
         {
-            return ContentSerializer.Serialize(ResolvedParameters.Content);
+            if (ResolvedParameters.Content != null)
+            {
+                return requestTransformContext.ContentSerializer.Serialize(ResolvedParameters.Content.Values.First(), ResolvedParameters.Content);
+            }
+
+            return null;
         }
 
-        protected virtual string ResolveUrlRoute(IInvocation invocation)
+        protected virtual string ResolveUrlTemplate(IInvocation invocation, RequestTransformContext requestTransformContext)
         {
             var methodInfo = invocation.Method;
             var methodAttribute = methodInfo.GetCustomAttribute<HttpAttribute>();
-            var baseAttribute = methodInfo.DeclaringType.GetCustomAttribute<BaseLocationAttribute>();
+            var baseAttribute = methodInfo.DeclaringType.GetTypeInfo().GetCustomAttribute<BaseLocationAttribute>();
 
-            var resolvedUrl = ((baseAttribute != null ? baseAttribute.BaseUrl + (InsertMissingSlashBetweenBaseLocationAndVerbAttributeUrl ? "/" : string.Empty) : string.Empty) + methodAttribute.URL).Replace("//", "/").Replace("/?", "?").TrimEnd('/');
-            resolvedUrl = resolvedUrl.Replace(ResolvedParameters.RouteParameters.ToDictionary(x => CreateRouteSegmentId(x.Name), CreateRouteSegmentValue));
-            resolvedUrl = AppendUrlParams(resolvedUrl, ResolvedParameters.QueryParameters);
-            return resolvedUrl;
+            return ((baseAttribute != null ? baseAttribute.BaseUrl + (requestTransformContext.InsertMissingSlashBetweenBaseLocationAndVerbAttributeUrl ? "/" : string.Empty) : string.Empty) + methodAttribute.URL).CleanUpUrlString();
         }
 
-        protected virtual string AppendUrlParams(string url, IEnumerable<Parameter> queryParameters)
+        protected virtual string ResolveUrl(string urlTemplate, RequestTransformContext requestTransformContext)
+        {
+            urlTemplate = urlTemplate.Replace(ResolvedParameters.RouteParameters.ToDictionary(x => CreateRouteSegmentId(x.Name), x => CreateRouteSegmentValue(x, requestTransformContext)));
+            urlTemplate = AppendUrlParams(urlTemplate, ResolvedParameters.QueryParameters, requestTransformContext);
+            return urlTemplate;
+        }
+
+        protected virtual string AppendUrlParams(string url, IEnumerable<Parameter> queryParameters, RequestTransformContext requestTransformContext)
         {
             var urlParams = ResolvedParameters.QueryParameters.Any()
                                 ? (url.Contains("?") ? "&" : "?")
-                                  + string.Join("&", ResolvedParameters.QueryParameters.Select(CreateUrlParameter))
+                                  + string.Join("&", ResolvedParameters.QueryParameters.SelectMany(x => CreateUrlParameter(x, requestTransformContext)))
                                 : string.Empty;
             return url + urlParams;
         }
 
-        protected virtual HttpMethod ResolveHttpMethod(IInvocation invocation)
+        protected virtual HttpAttribute ResolveHttpMethodAttribute(IInvocation invocation)
         {
             var methodInfo = invocation.Method;
             var methodAttribute = methodInfo.GetCustomAttribute<HttpAttribute>();
-            var resolvedMethod = methodAttribute.Method;
-            return resolvedMethod;
+            return methodAttribute;
         }
 
         protected virtual string CreateRouteSegmentId(string name)
@@ -138,18 +131,25 @@ namespace WebAnchor.RequestFactory
             return "{" + name + "}";
         }
 
-        protected virtual string CreateRouteSegmentValue(Parameter parameter)
+        protected virtual string CreateRouteSegmentValue(Parameter parameter, RequestTransformContext requestTransformContext)
         {
-            var value = parameter.Value?.ToString() ?? parameter.ParameterValue.ToString();
-            return PreservePathInUrlSegmentParameters 
-                ? string.Join("/", value.Split('/').Select(WebUtility.UrlEncode)) 
-                : WebUtility.UrlEncode(value);
+            var value = requestTransformContext.ParameterValueFormatter.Format(parameter.Values.First(), parameter);
+            return requestTransformContext.EncodeUrlSegmentSeparatorsInUrlSegmentSubstitutions
+                ? WebUtility.UrlEncode(value)
+                : string.Join("/", value.Split('/').Select(WebUtility.UrlEncode));
         }
 
-        protected virtual string CreateUrlParameter(Parameter parameter)
+        protected virtual List<string> CreateUrlParameter(Parameter parameter, RequestTransformContext requestTransformContext)
         {
-            var value = parameter.Value?.ToString() ?? parameter.ParameterValue.ToString();
-            return $"{parameter.Name}={WebUtility.UrlEncode(value)}";
+            List<Tuple<string, string>> nameValuePairs;
+            List<string> values = new List<string>();
+            foreach (var value in (IEnumerable)parameter.Values)
+            {
+                values.Add(WebUtility.UrlEncode(requestTransformContext.ParameterValueFormatter.Format(value, parameter)));
+            }
+
+            nameValuePairs = requestTransformContext.QueryParameterListStrategy.CreateNameValuePairs(parameter, values).ToList();
+            return nameValuePairs.Select(x => $"{x.Item1}={x.Item2}").ToList();
         }
     }
 }
